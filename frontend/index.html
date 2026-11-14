@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diabetes Risk Predictor</title>
+<style>
+  :root {
+    --ink:#48483A; --muted:#6F6F61; --bg:#EEF7F2; --card:#FBFEFC; --line:#DAE5DE;
+    --brand:#5C574F; --brand2:#74776B; --accent:#A28F9D;
+    --low:#4F9A78; --high:#C4574F;
+    --side1:#48483A; --side2:#5C574F;
+    --honey:#DFF8EB;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; font-family:"Segoe UI", system-ui, sans-serif; color:var(--ink);
+    background:var(--bg); display:grid; grid-template-columns:340px 1fr; min-height:100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  aside {
+    background:linear-gradient(160deg, var(--side1), var(--side2));
+    color:var(--honey); padding:36px 30px; display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .logo {
+    width:46px; height:46px; border-radius:14px; display:grid; place-items:center;
+    background:linear-gradient(135deg, var(--accent), #8C7A89); font-size:1.4rem;
+  }
+  aside h1 { font-size:1.6rem; line-height:1.2; margin:22px 0 10px; color:#fff; }
+  aside p.lead { color:#CFE3D8; font-size:.95rem; line-height:1.5; margin:0; }
+  .steps { margin:34px 0 0; padding:0; list-style:none; }
+  .steps li { display:flex; gap:12px; margin-bottom:18px; font-size:.9rem; color:#E3F1E9; }
+  .steps b {
+    flex:none; width:26px; height:26px; border-radius:50%; background:rgba(162,143,157,.35);
+    display:grid; place-items:center; font-size:.8rem; color:#fff;
+  }
+  .disclaimer {
+    margin-top:auto; padding:14px 16px; border-radius:12px; font-size:.8rem; line-height:1.5;
+    background:rgba(223,248,235,.1); color:#D3E2D8;
+  }
+
+  /* ---------- Main ---------- */
+  main { padding:36px 40px; display:grid; gap:24px; align-content:start;
+         grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); }
+  .card {
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:26px 28px; box-shadow:0 6px 24px rgba(72,72,58,.08);
+  }
+  .card h2 { margin:0 0 4px; font-size:1.15rem; }
+  .sub { margin:0 0 18px; color:var(--muted); font-size:.88rem; }
+
+  .examples { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .chip {
+    border:1px solid var(--accent); background:#fff; color:var(--brand); font-weight:600;
+    padding:6px 12px; border-radius:20px; font-size:.8rem; cursor:pointer;
+  }
+  .chip:hover { background:#F1EAF0; }
+
+  fieldset { border:0; padding:0; margin:18px 0 0; }
+  legend { font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:0; margin-bottom:8px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field label { display:block; font-size:.82rem; font-weight:600; margin-bottom:5px; }
+  .wrap { position:relative; }
+  .wrap input {
+    width:100%; padding:10px 46px 10px 12px; border:1px solid var(--line); border-radius:10px;
+    font-size:.95rem; background:#F5FBF8; color:var(--ink);
+  }
+  .wrap input:focus { outline:2px solid var(--accent); border-color:transparent; background:#fff; }
+  .unit { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:.72rem; color:var(--muted); pointer-events:none; }
+
+  .go {
+    margin-top:22px; width:100%; padding:14px; border:0; border-radius:12px; cursor:pointer;
+    background:linear-gradient(135deg, var(--brand), var(--brand2)); color:#fff;
+    font-size:1rem; font-weight:700; box-shadow:0 8px 18px rgba(72,72,58,.25);
+  }
+  .go:disabled { opacity:.6; cursor:wait; }
+  .error { margin-top:14px; padding:12px 14px; background:#F6E6E4; color:#8A3A33; border-radius:10px; font-size:.88rem; white-space:pre-line; }
+  .hidden { display:none; }
+
+  /* ---------- Result ---------- */
+  .empty { text-align:center; color:var(--muted); padding:60px 10px; }
+  .empty .big { font-size:2.6rem; }
+  .ringbox { display:flex; flex-direction:column; align-items:center; margin:6px 0 4px; }
+  .ring { position:relative; width:190px; height:190px; }
+  .ring svg { transform:rotate(-90deg); width:100%; height:100%; }
+  .ring .track { stroke:#E3EBE6; }
+  .ring .fill { transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1), stroke .3s; }
+  .ring .num { position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
+  .ring .num strong { font-size:2.8rem; line-height:1; }
+  .ring .num span { display:block; font-size:.75rem; color:var(--muted); margin-top:2px; }
+  .badge { margin-top:14px; padding:6px 16px; border-radius:20px; color:#fff; font-weight:700; font-size:.9rem; }
+  .thr { margin-top:8px; font-size:.8rem; color:var(--muted); }
+
+  .factors h3 { font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:26px 0 8px; }
+  .factor { display:grid; grid-template-columns:1fr auto; gap:4px 10px; margin-bottom:14px; font-size:.9rem; }
+  .factor .tag { font-size:.75rem; font-weight:700; }
+  .factor .bar { grid-column:1 / -1; height:8px; border-radius:4px; background:#E3EBE6; overflow:hidden; }
+  .factor .bar i { display:block; height:100%; border-radius:4px; width:0; transition:width .8s ease; }
+  .note { font-size:.78rem; color:var(--muted); margin-top:18px; line-height:1.5; }
+
+  @media (max-width:900px) {
+    body { grid-template-columns:1fr; }
+    aside { position:static; height:auto; }
+    .disclaimer { margin-top:22px; }
+    main { padding:22px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">🩺</div>
+  <h1>Diabetes Risk Predictor</h1>
+  <p class="lead">A machine-learning model estimates diabetes risk from a few health measurements and explains what drove the score.</p>
+  <ul class="steps">
+    <li><b>1</b><span>Enter the patient's values. Blank optional fields are handled automatically.</span></li>
+    <li><b>2</b><span>The API scores the patient with a logistic regression model.</span></li>
+    <li><b>3</b><span>See the risk level and the top factors behind it.</span></li>
+  </ul>
+  <div class="disclaimer">
+    <b>Educational demo, not a medical diagnosis.</b><br>
+    Trained on a small public dataset (Pima Indians, women aged 21 and over), so it may not generalize to other groups.
+  </div>
+</aside>
+
+<main>
+  <section class="card">
+    <h2>Patient values</h2>
+    <p class="sub">Fill in what you know, or load an example.</p>
+    <div class="examples">
+      <button type="button" class="chip" data-ex="high">Example: higher risk</button>
+      <button type="button" class="chip" data-ex="low">Example: lower risk</button>
+      <button type="button" class="chip" data-ex="clear">Clear</button>
+    </div>
+
+    <form id="form">
+      <fieldset>
+        <legend>About the patient</legend>
+        <div class="grid">
+          <div class="field"><label>Age</label><div class="wrap"><input name="Age" type="number" step="1" required><span class="unit">years</span></div></div>
+          <div class="field"><label>Pregnancies</label><div class="wrap"><input name="Pregnancies" type="number" step="1" required></div></div>
+          <div class="field" style="grid-column:1 / -1"><label>Family history score</label><div class="wrap"><input name="DiabetesPedigreeFunction" type="number" step="any" required><span class="unit">pedigree</span></div></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Measurements (optional)</legend>
+        <div class="grid">
+          <div class="field"><label>Glucose</label><div class="wrap"><input name="Glucose" type="number" step="any"><span class="unit">mg/dL</span></div></div>
+          <div class="field"><label>Blood pressure</label><div class="wrap"><input name="BloodPressure" type="number" step="any"><span class="unit">mm Hg</span></div></div>
+          <div class="field"><label>BMI</label><div class="wrap"><input name="BMI" type="number" step="any"><span class="unit">kg/m²</span></div></div>
+          <div class="field"><label>Skin thickness</label><div class="wrap"><input name="SkinThickness" type="number" step="any"><span class="unit">mm</span></div></div>
+          <div class="field"><label>Insulin</label><div class="wrap"><input name="Insulin" type="number" step="any"><span class="unit">µU/ml</span></div></div>
+        </div>
+      </fieldset>
+
+      <button class="go" id="btn" type="submit">Calculate risk</button>
+    </form>
+    <div id="error" class="error hidden"></div>
+  </section>
+
+  <section class="card">
+    <h2>Result</h2>
+    <p class="sub">The model's estimate and the reasons behind it.</p>
+
+    <div id="placeholder" class="empty"><div class="big">📊</div>Your result will appear here.</div>
+
+    <div id="result" class="hidden">
+      <div class="ringbox">
+        <div class="ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="track" cx="60" cy="60" r="54" fill="none" stroke-width="12"></circle>
+            <circle class="fill" id="fill" cx="60" cy="60" r="54" fill="none" stroke-width="12" stroke-linecap="round"
+                    stroke-dasharray="339.29" stroke-dashoffset="339.29"></circle>
+          </svg>
+          <div class="num"><div><strong id="score">0%</strong><span>risk score</span></div></div>
+        </div>
+        <div class="badge" id="level"></div>
+        <div class="thr" id="thr"></div>
+      </div>
+
+      <div class="factors">
+        <h3>Why this score</h3>
+        <div id="factors"></div>
+      </div>
+      <p class="note" id="disclaimer"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+  // Change this to your deployed API address later
+  const API_URL = "http://127.0.0.1:8000";
+  const C = 339.29; // ring circumference
+
+  const EXAMPLES = {
+    high: { Age:50, Pregnancies:2, DiabetesPedigreeFunction:0.627, Glucose:148, BloodPressure:72, BMI:33.6, SkinThickness:35, Insulin:"" },
+    low:  { Age:31, Pregnancies:1, DiabetesPedigreeFunction:0.351, Glucose:85,  BloodPressure:66, BMI:26.6, SkinThickness:29, Insulin:"" },
+    clear:{ Age:"", Pregnancies:"", DiabetesPedigreeFunction:"", Glucose:"", BloodPressure:"", BMI:"", SkinThickness:"", Insulin:"" },
+  };
+
+  const form = document.getElementById("form");
+  const btn = document.getElementById("btn");
+  const errorBox = document.getElementById("error");
+
+  function fill(name) {
+    for (const [k, v] of Object.entries(EXAMPLES[name])) form.elements[k].value = v;
+  }
+  fill("high");
+    document.querySelectorAll(".chip").forEach(b =>
+    b.addEventListener("click", () => {
+      fill(b.dataset.ex);
+      if (b.dataset.ex === "clear") {
+        document.getElementById("result").classList.add("hidden");
+        document.getElementById("placeholder").classList.remove("hidden");
+        errorBox.classList.add("hidden");
+      }
+    }));
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.add("hidden");
+
+    // Blank optional fields are left out of the request
+    const body = {};
+    for (const [key, value] of new FormData(form).entries()) {
+      if (value.trim() !== "") body[key] = Number(value);
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Calculating...";
+    try {
+      const res = await fetch(API_URL + "/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msgs = Array.isArray(data.detail)
+          ? data.detail.map(d => d.loc[d.loc.length - 1] + ": " + d.msg)
+          : ["Something went wrong."];
+        showError(msgs.join("\n"));
+        return;
+      }
+      showResult(data);
+    } catch (err) {
+      showError("Could not reach the API. Is the server running?");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Calculate risk";
+    }
+  });
+
+  function showError(text) {
+    errorBox.textContent = text;
+    errorBox.classList.remove("hidden");
+  }
+
+  function showResult(d) {
+    document.getElementById("placeholder").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+
+    const pct = Math.round(d.probability * 100);
+    const color = d.flagged ? "var(--high)" : "var(--low)";
+
+    // Ring + count-up number
+    const ring = document.getElementById("fill");
+    ring.style.stroke = color;
+    requestAnimationFrame(() => { ring.style.strokeDashoffset = C * (1 - d.probability); });
+    const scoreEl = document.getElementById("score");
+    let n = 0;
+    const timer = setInterval(() => {
+      n = Math.min(pct, n + Math.max(1, Math.round(pct / 25)));
+      scoreEl.textContent = n + "%";
+      if (n >= pct) clearInterval(timer);
+    }, 24);
+
+    const level = document.getElementById("level");
+    level.textContent = d.risk_level;
+    level.style.background = color;
+    document.getElementById("thr").textContent =
+      "Flagged when the score is " + Math.round(d.threshold * 100) + "% or higher";
+
+    // Factor bars
+    const max = Math.max(...d.top_factors.map(f => f.strength), 0.01);
+    const box = document.getElementById("factors");
+    box.innerHTML = "";
+    for (const f of d.top_factors) {
+      const up = f.effect === "raises risk";
+      const row = document.createElement("div");
+      row.className = "factor";
+
+      const name = document.createElement("span");
+      name.textContent = f.feature;
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = (up ? "↑ " : "↓ ") + f.effect;
+      tag.style.color = up ? "var(--high)" : "var(--low)";
+
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      const inner = document.createElement("i");
+      inner.style.background = up ? "var(--high)" : "var(--low)";
+      bar.appendChild(inner);
+
+      row.append(name, tag, bar);
+      box.appendChild(row);
+      requestAnimationFrame(() => { inner.style.width = Math.max(6, (f.strength / max) * 100) + "%"; });
+    }
+    document.getElementById("disclaimer").textContent =
+      d.disclaimer + " The score is the model's output, not a clinical probability.";
+  }
+</script>
+</body>
+</html>
