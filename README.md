@@ -2,7 +2,7 @@
 
 A machine-learning web app that estimates diabetes risk from a few health measurements and explains which factors drove each score.
 
-**Live demo:** https://roop-code134.github.io/diabetes-risk-predictor/frontend/
+**Live demo:** https://diabetes-risk-predictor-1-jnin.onrender.com
 **API docs:** https://diabetes-risk-predictor-tcuc.onrender.com/docs
 
 > The API runs on a free server that sleeps when idle, so the first request can take 30 to 60 seconds.
