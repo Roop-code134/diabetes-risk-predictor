@@ -193,6 +193,8 @@
 <script>
   // Change this to your deployed API address later
     const API_URL = "https://diabetes-risk-predictor-tcuc.onrender.com";
+    // Start waking the free server as soon as the page opens
+  fetch(API_URL + "/health").catch(() => {});
   const C = 339.29; // ring circumference
 
   const EXAMPLES = {
